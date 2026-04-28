@@ -1,0 +1,32 @@
+# gpio_blink.psr
+# Toggle external GPIO pin 1 (PC0) five times.
+
+gpioinit
+
+print Blinking GPIO pin 1 (PC0) 5 times...
+
+gpioset 1 1
+delay 200
+gpioset 1 0
+delay 200
+
+gpioset 1 1
+delay 200
+gpioset 1 0
+delay 200
+
+gpioset 1 1
+delay 200
+gpioset 1 0
+delay 200
+
+gpioset 1 1
+delay 200
+gpioset 1 0
+delay 200
+
+gpioset 1 1
+delay 200
+gpioset 1 0
+
+print Done blinking!

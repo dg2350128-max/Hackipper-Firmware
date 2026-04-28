@@ -1,0 +1,16 @@
+# hello_world.psr
+# Simple PyScriptRun script – print a greeting and blink the LED.
+
+print Hello from PyScriptRun!
+print Flipper Zero is running a .psr script.
+
+# Flash the red LED twice
+led red
+delay 300
+led off
+delay 200
+led red
+delay 300
+led off
+
+print Done!

@@ -1,0 +1,31 @@
+# hardware_init.psr
+# Initialise all major hardware subsystems.
+
+print Initialising Sub-GHz...
+subinit
+print Sub-GHz ready.
+
+print Initialising NFC...
+nfcinit
+print NFC ready.
+
+print Initialising Infrared RX...
+irinit
+print Infrared RX ready.
+
+print Initialising RFID...
+rfidinit
+print RFID ready.
+
+print Initialising GPIO pins...
+gpioinit
+print GPIO ready.
+
+# Signal success: green LED + vibration
+led green
+vibro 1
+delay 500
+vibro 0
+led off
+
+print All systems initialised!

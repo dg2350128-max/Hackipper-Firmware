@@ -1,0 +1,10 @@
+App(
+    appid="pyscriptrun",
+    name="PyScriptRun",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="pyscriptrun_app",
+    requires=["gui"],
+    stack_size=3 * 1024,
+    fap_category="Tools",
+    resources="resources",
+)
