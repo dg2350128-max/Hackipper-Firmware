@@ -1,0 +1,116 @@
+name: 'Hackipper Release'
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_name:
+        description: 'Release name'
+        required: false
+        default: 'First Hackipper'
+
+env:
+  TARGET_HW: 7
+  FBT_TOOLCHAIN_PATH: /home/runner/_work/toolchain
+  FBT_GIT_SUBMODULE_SHALLOW: 1
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 'Checkout firmware'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: 'Init core firmware submodules (shallow)'
+        run: |
+          git submodule init
+          git submodule update --depth 1 --jobs 4 \
+            lib/mlib lib/nanopb assets/protobuf lib/libusb_stm32 \
+            lib/FreeRTOS-Kernel lib/microtar lib/mbedtls lib/heatshrink \
+            lib/stm32wb_cmsis lib/stm32wb_hal lib/stm32wb_copro
+
+      - name: 'Clone FM Transmitter app'
+        run: |
+          git clone --depth 1 https://github.com/wh00hw/FMTransmitter-FAP.git \
+            applications_user/fm_transmitter
+
+      - name: 'Clone Sub-GHz Extender app'
+        run: |
+          git clone --depth 1 https://github.com/teeebor/flipper_subghz_extender.git \
+            applications_user/subghz_extender
+
+      - name: 'Install host dependencies'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            python3 python3-pip python3-venv \
+            git curl wget tar gzip \
+            build-essential libssl-dev \
+            scons
+
+      - name: 'Build firmware + apps'
+        run: |
+          ./fbt TARGET_HW=$TARGET_HW DEBUG=0 COMPACT=1 \
+            updater_package fap_dist 2>&1 | tee build.log
+          echo "Build finished with exit code $?"
+
+      - name: 'Package firmware into tgz'
+        run: |
+          SUFFIX="hackipper-$(git rev-parse --short HEAD)"
+          mkdir -p release_artifacts
+
+          # Main update package (OTA tgz)
+          UPDATE_TGZ=$(find dist/f7-* -name "flipper-z-f7-update-*.tgz" 2>/dev/null | head -1)
+          if [ -n "$UPDATE_TGZ" ]; then
+            cp "$UPDATE_TGZ" "release_artifacts/flipper-z-f7-update-${SUFFIX}.tgz"
+          fi
+
+          # Resources
+          tar czpf "release_artifacts/flipper-z-f7-resources-${SUFFIX}.tgz" \
+            -C build/latest resources
+
+          # FAP apps (External apps built as .fap)
+          FAP_DIR=$(find dist/f7-* -maxdepth 1 -type d -name "apps" 2>/dev/null | head -1)
+          if [ -n "$FAP_DIR" ]; then
+            tar czpf "release_artifacts/flipper-z-f7-faps-${SUFFIX}.tgz" \
+              -C "$(dirname $FAP_DIR)" apps
+          fi
+
+          # Bundled archive of all release artifacts
+          tar czpf "hackipper-firmware-${SUFFIX}.tgz" -C release_artifacts .
+
+          echo "SUFFIX=$SUFFIX" >> $GITHUB_ENV
+          echo "BUNDLE_TGZ=hackipper-firmware-${SUFFIX}.tgz" >> $GITHUB_ENV
+          ls -lh release_artifacts/ hackipper-firmware-*.tgz
+
+      - name: 'Create GitHub Release'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: hackipper-v1.0
+          name: ${{ github.event.inputs.release_name || 'First Hackipper' }}
+          body: |
+            ## Hackipper Firmware – First Release
+
+            Custom Flipper Zero firmware built from the official firmware base,
+            bundled with two extra apps:
+
+            - 📻 **FM Transmitter** ([wh00hw/FMTransmitter-FAP](https://github.com/wh00hw/FMTransmitter-FAP))
+            - 📡 **Sub-GHz Extender** ([teeebor/flipper_subghz_extender](https://github.com/teeebor/flipper_subghz_extender))
+
+            ### Installation
+            Use the **update package tgz** with [qFlipper](https://flipperzero.one/update)
+            or the web updater at [lab.flipper.net](https://lab.flipper.net).
+
+            Built from commit: `${{ github.sha }}`
+          draft: false
+          prerelease: false
+          files: |
+            ${{ env.BUNDLE_TGZ }}
+            release_artifacts/**
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
