@@ -1,0 +1,21 @@
+# led_show.psr
+# Cycle through LED colours with a beep on each change.
+
+print Starting LED colour cycle...
+
+led red
+beep 440 150
+delay 200
+
+led green
+beep 523 150
+delay 200
+
+led blue
+beep 659 150
+delay 200
+
+led off
+beep 880 200
+
+print LED cycle complete.
