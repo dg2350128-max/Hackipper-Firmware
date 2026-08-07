@@ -35,3 +35,11 @@
 [submodule "documentation/doxygen/doxygen-awesome-css"]
 	path = documentation/doxygen/doxygen-awesome-css
 	url = https://github.com/jothepro/doxygen-awesome-css.git
+[submodule "applications_user/fm_transmitter"]
+	path = applications_user/fm_transmitter
+	url = https://github.com/wh00hw/FMTransmitter-FAP.git
+	shallow = true
+[submodule "applications_user/subghz_extender"]
+	path = applications_user/subghz_extender
+	url = https://github.com/teeebor/flipper_subghz_extender.git
+	shallow = true
